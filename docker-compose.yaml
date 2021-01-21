@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  drupal-nginx:
+    build:
+      context: ./builds/drupal-nginx
+    container_name: drupal-nginx
+    ports:
+      - "8080:80"
+    networks:
+      - drupal-stack
+    volumes:
+      - drupal-dynamic-files:/usr/share/nginx/html/sites/default/files:ro
+    depends_on:
+      - drupal-php
+  drupal-php:
+    build:
+      context: builds/drupal-php
+    container_name: drupal-php
+    networks:
+      - drupal-stack
+    volumes:
+      - drupal-dynamic-files:/var/www/html/sites/default/files:rw
+    depends_on:
+      - drupal-pgsql
+  drupal-pgsql:
+    build:
+      context: ./builds/drupal-pgsql
+    container_name: drupal-pgsql
+    environment:
+      - POSTGRES_DB=drupal
+      - POSTGRES_USER=drupal
+      - POSTGRES_PASSWORD=drupal
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - PGDATA=/var/lib/postgresql/data
+    volumes:
+      - drupal-pgsql:/var/lib/postgresql/data:rw
+    networks:
+      - drupal-stack
+
+#  drupal-memcached:
+#    build:
+#      context: ./builds/drupal-memcached
+#    container_name: drupal-memcached
+#    networks:
+#      - drupal-stack
+#  drupal-varnish:
+#    build:
+#      context: ./builds/drupal-varnish
+#    container_name: drupal-varnish
+#    networks:
+#      - drupal-stack
+
+networks:
+  drupal-stack:
+    ipam:
+      config:
+        - subnet: 172.18.1.0/24
+
+volumes:
+  drupal-dynamic-files:
+  drupal-pgsql:
